@@ -1,0 +1,29 @@
+{
+  "name": "memweave",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MemWeave local-first, evidence-grounded persona memory platform and development desktop shell.",
+  "license": "SEE LICENSE IN LICENSE",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "setup": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\setup-dev.ps1",
+    "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\start-dev.ps1",
+    "desktop:prepare-electron": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\prepare-electron.ps1",
+    "voice:prepare-ffmpeg": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\prepare-ffmpeg.ps1",
+    "desktop:dev": "electron .",
+    "client:check": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\start-client.ps1 -CheckOnly",
+    "client:start": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\start-client.ps1",
+    "test:desktop": "node ./tests/desktop_failure_page_smoke.cjs",
+    "test:regression": "node ./scripts/run-python.cjs ./tests/regression_smoke.py",
+    "test:quality": "node ./scripts/run-python.cjs ./tests/distillation_quality_policy_smoke.py",
+    "test:model-discovery": "node ./scripts/run-python.cjs ./tests/model_discovery_smoke.py",
+    "test:hygiene": "node ./scripts/run-python.cjs ./scripts/check_repository_hygiene.py",
+    "test": "npm run test:regression && npm run test:quality && npm run test:model-discovery && npm run test:desktop && npm run test:hygiene"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11"
+  }
+}

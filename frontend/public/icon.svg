@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Memory Skill">
+  <rect width="64" height="64" rx="12" fill="#111827"/>
+  <path d="M18 18h20a8 8 0 0 1 8 8v20H26a8 8 0 0 1-8-8V18Z" fill="#f8fafc"/>
+  <path d="M26 27h18M26 35h14M26 43h10" stroke="#2563eb" stroke-width="4" stroke-linecap="round"/>
+</svg>

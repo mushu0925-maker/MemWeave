@@ -1,0 +1,51 @@
+# Environment and credentials
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+.python-deps/
+
+# Node and frontend builds
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data and generated content
+backend/data/
+backend/tmp/
+tmp/
+logs/
+output/
+uploads/
+*.sqlite
+*.sqlite3
+*.sqlite3-journal
+
+# Optional external adapters and downloaded tools
+indextts2/
+tools/ffmpeg/
+.npm-cache/
+.setup-tmp/
+.test-tmp/
+
+# Browser and editor state
+.playwright-cli/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
