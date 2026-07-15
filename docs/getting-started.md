@@ -58,9 +58,10 @@ External AI is disabled by default. Open Settings and configure only the capabil
 - Chat / persona classification
 - Vision OCR
 - ASR
-- Authorized voice generation
 
-The provider must expose an OpenAI-compatible API. Some providers do not implement model discovery, so the Settings page always accepts a manually entered model name.
+Chat, persona classification, vision OCR, and ASR use OpenAI-compatible provider settings. Some providers do not implement model discovery, so the Settings page always accepts a manually entered model name.
+
+Authorized voice generation is separate. It uses an external IndexTTS2 adapter configured through `backend/.env`; Settings displays its status but does not edit those fields. See [Authorized Voice Output](authorized-voice.md).
 
 ## Verify the Checkout
 

@@ -65,6 +65,8 @@ Default addresses:
 
 Configure an OpenAI-compatible provider in Settings only when you need model-backed features. See [Getting Started](docs/getting-started.md) for manual setup and troubleshooting.
 
+IndexTTS2 uses a separate local adapter. Read [Authorized Voice Output](docs/authorized-voice.md) before enabling it.
+
 ## Desktop Development Shell
 
 After setup:

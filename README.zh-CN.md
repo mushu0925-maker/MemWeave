@@ -67,6 +67,8 @@ npm run dev
 
 只有在需要模型能力时，才需要在“设置”中配置兼容 OpenAI 协议的供应商。手动安装和常见问题见 [启动说明](docs/getting-started.md)。
 
+IndexTTS2 使用单独的本地适配器，启用前请先阅读 [授权声音输出](docs/authorized-voice.zh-CN.md)。
+
 ## 桌面开发壳
 
 完成依赖安装后运行：

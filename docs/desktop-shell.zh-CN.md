@@ -20,6 +20,8 @@ npm run client:start
 
 本仓库不包含 IndexTTS2 源码、模型权重、参考音频或生成音频。
 
+自动启动还需要兼容的 `indextts2/server.py` 适配器和对应的后端环境配置。完整目录、接口约定和检查方法见 [授权声音输出](authorized-voice.zh-CN.md)。
+
 ## 它没有打包的内容
 
 当前没有 installer builder、代码签名、自动更新、内置 Python/Node 或内置模型运行时。这些属于后续独立的桌面分发工作。

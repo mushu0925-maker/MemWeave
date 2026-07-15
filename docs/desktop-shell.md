@@ -20,6 +20,8 @@ If an external IndexTTS2 checkout and checkpoints exist under `indextts2/index-t
 
 No IndexTTS2 source, weights, reference audio, or generated output is included in this repository.
 
+The automatic layout also needs a compatible `indextts2/server.py` adapter and matching backend environment settings. See [Authorized Voice Output](authorized-voice.md) for the exact layout, adapter contract, and readiness checks.
+
 ## What It Does Not Package
 
 The shell has no installer builder, code signing, automatic updates, bundled Python or Node, or bundled model runtime. Those are separate distribution tasks.
