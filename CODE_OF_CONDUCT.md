@@ -1,7 +1,12 @@
 # Code of Conduct
 
-MemWeave contributors are expected to communicate respectfully, review ideas on their technical merits, and protect the privacy of people represented in memory material.
+Treat contributors with respect, discuss changes on their technical merits, and remember that memory material may describe people who never agreed to have their private lives published.
 
-Harassment, discrimination, threats, doxxing, publication of private memory data, or sharing credentials and voice references without authorization are not acceptable.
+The following are not acceptable here:
 
-Report conduct concerns privately to the repository maintainer. Maintainers may edit or remove contributions, comments, or access when needed to protect participants and users.
+- harassment, discrimination, threats, or personal attacks;
+- doxxing or publishing private memory material;
+- sharing credentials, voice references, or generated media without permission;
+- pressuring someone to disclose sensitive personal information.
+
+Report a conduct concern privately to the repository maintainer. The maintainer may remove comments or contributions, limit access, or take other reasonable action to protect participants and users.

@@ -1,13 +1,6 @@
-# uncertainty
+# Uncertainty
 
-Owns unclear, low-confidence, conflicting, sensitive, unsupported, or painful memory candidates.
-
-中文备注：
-```text
-uncertainty 承接不确定项。
-它不是垃圾桶，也不是稳定个人库。
-它的任务是保存需要用户确认、纠正、降权、隐藏或遗忘的候选记忆。
-```
+This domain holds interpretations that are unclear, low-confidence, conflicting, sensitive, unsupported, or painful. It is a review queue, not a trash folder and not part of the stable personal library.
 
 Current implementation:
 
@@ -21,21 +14,18 @@ action API: app/api/v1/uncertainty.py -> POST /api/v1/uncertain-items/{item_id}/
 storage: uncertain_items.json
 ```
 
-Action rules:
+## Actions
 
-Implementation note: keep/correct preserve the confirmed text as a manual_override raw_source and then reuse A-M classification. Successful classification may create persona_items; failed classification keeps the raw_source and diagnostics without fabricating fallback persona_items. downrank/hide/forget only update status, metadata, and use_policy.
+| Action | Result |
+| --- | --- |
+| `keep` | Resolve the item, set `use_policy=usable_evidence`, save the claim as a `manual_override` raw source, then run A-M classification. |
+| `correct` | Resolve the item, save the corrected claim as a `manual_override` raw source, then run A-M classification. |
+| `downrank` | Resolve the item with `use_policy=low_confidence_context_only`. |
+| `hide` | Keep the item for audit but set `use_policy=exclude_from_chat_and_skill_keep_for_audit`. |
+| `forget` | Set `use_policy=do_not_use_for_chat_or_skill`. |
 
-```text
-keep: mark the uncertain item resolved, record use_policy=usable_evidence, save the claim as a manual_override raw_source, then try A-M classification.
-correct: mark resolved, record the user's corrected_claim, save the correction as a manual_override raw_source, then try A-M classification.
-downrank: mark resolved and record use_policy=low_confidence_context_only.
-hide: mark hidden and record use_policy=exclude_from_chat_and_skill_keep_for_audit.
-forget: mark forgotten and record use_policy=do_not_use_for_chat_or_skill.
-```
+Keep and correct may create persona items only after classification succeeds. A failed classification keeps the raw source and diagnostics; it does not fabricate fallback persona items. Downrank, hide, and forget update policy and state only.
 
-中文备注：
-```text
-这些动作只更新 uncertain_item 和关联 question_target 的状态、metadata、use_policy。
-它们不删除 raw_source，不生成本地保底 persona_items，也不自动触发 Skill regeneration。
-后续 chat retrieval 和 Skill generation 必须读取 use_policy，不能绕过隐藏、遗忘、降权、纠正策略。
-```
+None of these actions deletes the original raw source or automatically regenerates a Skill. Chat retrieval and Skill generation must read `use_policy` and respect every decision.
+
+中文：Uncertainty 保存需要用户确认或处理的候选记忆。Keep/Correct 会把确认文本先保存为 raw source，分类成功后才可以创建 persona item；降权、隐藏和遗忘只改状态与 `use_policy`。所有运行时消费者都必须遵守这些策略。

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to MemWeave will be documented in this file.
+This file records changes that affect how MemWeave is installed, used, or maintained.
 
 ## [Unreleased]
 
@@ -20,3 +20,4 @@ All notable changes to MemWeave will be documented in this file.
 - Product metadata and runtime names use MemWeave.
 - Mobile Chat height no longer forces the composer below the initial viewport.
 - Deprecated Starlette 422 constants use the current name.
+- Reworked the English and Chinese documentation to explain the project in direct, concrete language while keeping the technical and safety boundaries unchanged.

@@ -1,16 +1,10 @@
 # Infrastructure
 
-This directory is for technical adapters, not product truth.
+Infrastructure code connects MemWeave to providers, storage engines, media tools, and diagnostics. It implements technical details, not memory or persona rules.
 
-中文备注：
+中文：Infrastructure 只处理 AI client、存储、媒体提取、日志和诊断等技术适配，不能决定人格记忆的业务规则。
 
-```text
-infrastructure 只放技术适配：
-AI client、storage adapter、media extraction、logging、diagnostics。
-这里不能写“人格记忆”业务规则。
-```
-
-Target adapters:
+Adapter areas:
 
 ```text
 ai

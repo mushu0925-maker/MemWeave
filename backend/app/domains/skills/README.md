@@ -1,21 +1,11 @@
-# skills
+# Skills
 
-Owns generated runtime Skill artifacts.
+A Skill is a runtime package built from reviewed persona items, boundary rules, and selected evidence. It is not source data and can be regenerated whenever the personal library changes.
 
-中文备注：
+## Current V2 Packager
 
-```text
-Skill 是运行态产物，不是源数据。
-Skill 应从 persona_items、边界库和选定证据生成。
-个人库变化后 Skill 应可重新生成。
-```
+`generation.py` contains pure packaging rules. It turns persona items into evidence units, applies user-policy gates, usage and cap rules, and ranking scores.
 
-Current V2 implementation:
+The packager does not read or write storage, call an AI provider, or mutate raw sources, persona items, uncertain items, or question targets.
 
-```text
-generation.py owns pure Skill packaging rules.
-It turns persona_items into evidence units, applies user policy gates, usage matrix, cap rules, and ranking scores.
-It does not read or write storage directly.
-It does not call AI.
-It does not mutate raw_sources, persona_items, uncertain_items, or question_targets.
-```
+中文：Skill 是从已审核个人库生成的运行时产物，不是事实源。`generation.py` 只做纯打包和排序，不读写存储、不调用 AI、不修改任何记忆记录。

@@ -1,10 +1,5 @@
-# logging
+# Logging Adapters
 
-Logging and diagnostics adapters belong here.
+This area is for structured logs, model-call diagnostics, retry records, and audit output. It records decisions made elsewhere; it does not make business decisions itself.
 
-中文备注：
-
-```text
-这里以后承接结构化日志、模型调用诊断、重试记录和审计输出。
-业务判断仍应留在 domain 或 workflow。
-```
+中文：这里记录结构化日志、模型诊断、重试和审计信息。业务判断必须留在 domain 或 workflow。

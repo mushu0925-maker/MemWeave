@@ -1,10 +1,7 @@
-# profiles
+# Profiles
 
-Owns profile identity, basic description, relationship label, and profile-level boundaries.
+The profiles domain stores identity labels, basic descriptions, relationship labels, and profile-level boundaries.
 
-中文备注：
+It does not classify source material, infer personality, generate Skills, or produce chat replies.
 
-```text
-profiles 只管人物档案。
-不要在这里做原文分类、Skill 生成、聊天回复或人格推断。
-```
+中文：Profiles 只管人物档案和档案级边界，不负责原文分类、人格推断、Skill 生成或聊天回复。

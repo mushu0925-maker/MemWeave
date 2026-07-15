@@ -6,13 +6,13 @@ Security fixes target the latest version on the default branch.
 
 ## Reporting a Vulnerability
 
-Do not publish sensitive vulnerability details in a public issue. Use GitHub private vulnerability reporting when enabled, or contact the repository maintainer through a private channel listed on the maintainer's profile.
+Do not publish a vulnerability with sensitive details in a public issue. Use GitHub private vulnerability reporting when it is available, or contact the maintainer through a private channel listed on the maintainer's profile.
 
 Include the affected version, reproduction steps, impact, and any suggested mitigation. Do not include real API keys or personal memory material.
 
 ## Deployment Boundary
 
-MemWeave is a local single-user MVP. The FastAPI backend does not currently enforce production authentication, authorization, tenant isolation, or deployment-layer upload limits. Do not expose it directly to the public internet.
+MemWeave is a local, single-user MVP. The FastAPI backend does not enforce production authentication, authorization, tenant isolation, or deployment-level upload limits. Do not expose it directly to the public internet.
 
 For any network deployment, add at minimum:
 
@@ -25,6 +25,6 @@ For any network deployment, add at minimum:
 
 ## Sensitive Data
 
-Raw personal material, extracted text, persona items, chat history, voice references, generated audio, and API credentials may all be sensitive. Store them locally by default, minimize retention, and honor correction, hiding, forgetting, and deletion decisions.
+Raw personal material, extracted text, persona items, chat history, voice references, generated audio, and API credentials may all be sensitive. Keep them local by default, retain only what is needed, and respect correction, hiding, forgetting, and deletion decisions.
 
 Voice imitation requires explicit authorization. Voice references and generated output must never be committed to this repository.

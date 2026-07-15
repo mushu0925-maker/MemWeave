@@ -1,11 +1,7 @@
-# raw_sources
+# Raw Sources
 
-Owns original evidence preservation, extracted text, masked text, file metadata, hashes, and re-extraction entry points.
+Raw sources preserve submitted evidence, extracted or masked text, file metadata, hashes, and re-extraction entry points.
 
-中文备注：
+A classification failure must never remove the raw source. This domain stores evidence; it does not decide persona interpretations, build Skills, or assemble chat context.
 
-```text
-raw_sources 是证据源。
-分类失败不能删除 raw_source。
-raw_sources 不生成 persona_items，也不承担 Skill 或 chat 的真相来源之外的解释逻辑。
-```
+中文：Raw sources 是证据层。分类失败不能删除证据，这个领域也不负责人格解释、Skill 打包或聊天上下文。

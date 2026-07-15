@@ -1,6 +1,8 @@
 # Contributing to MemWeave
 
-Thank you for improving MemWeave. Contributions should keep the project local-first, evidence-grounded, and honest about model uncertainty.
+Contributions are welcome when they make the project easier to understand, safer to use, or more reliable without weakening the evidence trail.
+
+Before changing a memory, classification, chat, or voice workflow, identify which data layer owns the change. Raw sources, persona items, generated Skills, chat records, and uncertain items have different jobs and should not be merged for convenience.
 
 ## Development Setup
 
@@ -22,7 +24,7 @@ npm run build
 
 Do not commit local `.env` files, API keys, profile data, raw personal material, databases, logs, model weights, reference audio, or generated media.
 
-## Architecture Rules
+## Rules That Changes Must Preserve
 
 - Preserve raw evidence before classification.
 - Classification failure must not erase raw material.
@@ -34,6 +36,6 @@ Do not commit local `.env` files, API keys, profile data, raw personal material,
 
 ## Pull Requests
 
-Keep changes focused. Explain the user-facing behavior, affected data layers, verification performed, and remaining risks. Add or update deterministic tests when behavior changes.
+Keep a pull request focused. Explain what changes for the user, which data layers are involved, what you verified, and what still remains uncertain. Add or update deterministic tests when behavior changes.
 
 By contributing, you agree that your contribution is provided under the repository's PolyForm Noncommercial License 1.0.0.

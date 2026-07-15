@@ -1,10 +1,5 @@
-# storage
+# Storage Adapters
 
-Storage adapters belong here.
+Storage adapters hide persistence details from the domains. The current JSON store and optional SQLite document backend should expose the same store behavior; domain rules must not depend on which one is active.
 
-中文备注：
-
-```text
-短期 JSON store 可以继续使用。
-中期迁移 SQLite 时，domain 不应关心底层是 JSON、SQLite 还是 Supabase。
-```
+中文：存储适配层用来隔离 JSON、SQLite 等底层差异。Domain 只依赖统一的 store 行为，不应关心当前存储实现。

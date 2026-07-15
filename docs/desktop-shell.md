@@ -1,6 +1,6 @@
-# Development Desktop Shell
+# Desktop Development Shell
 
-MemWeave includes an Electron shell for local development. It is not a packaged installer.
+The Electron shell opens the local MemWeave services in a desktop window during development. It is not a packaged Windows application.
 
 ## Start
 
@@ -10,16 +10,16 @@ npm run client:check
 npm run client:start
 ```
 
-The launcher uses `backend/.venv/Scripts/python.exe` when available, otherwise a Python interpreter from PATH. Node is resolved from PATH. The Electron process starts or reuses the local backend and frontend and keeps its own logs under `logs/`.
+The launcher uses `backend/.venv/Scripts/python.exe` when it exists, then falls back to Python from PATH. Node is resolved from PATH. Electron starts or reuses the local backend and frontend and writes its logs under `logs/`.
 
-Frontend readiness includes referenced Next.js static assets, so an HTML-only broken development server is not accepted as ready.
+The readiness check requests the Next.js static assets referenced by the page. A server that returns only HTML while its CSS or JavaScript is broken is not considered ready.
 
 ## Optional Voice Adapter
 
-If an external IndexTTS2 checkout and checkpoints exist under `indextts2/index-tts`, the shell can attempt to start it. Missing weights or runtime dependencies are treated as an optional warning; the rest of MemWeave can still start.
+If an external IndexTTS2 checkout and checkpoints exist under `indextts2/index-tts`, the shell can try to start it. Missing weights or runtime dependencies produce an optional warning and do not stop the rest of MemWeave.
 
 No IndexTTS2 source, weights, reference audio, or generated output is included in this repository.
 
-## Packaging Boundary
+## What It Does Not Package
 
-The current shell has no installer builder, code signing, automatic updates, bundled Python/Node, or bundled model runtime. Those are separate distribution tasks.
+The shell has no installer builder, code signing, automatic updates, bundled Python or Node, or bundled model runtime. Those are separate distribution tasks.

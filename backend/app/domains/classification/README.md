@@ -1,11 +1,7 @@
-# classification
+# Classification
 
-Owns AI input dissection and A-M library classification.
+This domain turns raw-source content into candidate A-M persona items and diagnostics.
 
-中文备注：
+It does not write invented local fallback persona items when the model fails. Missing coverage becomes `coverage_warnings` or uncertainty seeds so that the user can review the gap without losing the raw source.
 
-```text
-classification 只负责把 raw_source 内容分类成候选 persona item 结果和 diagnostics。
-不能生成本地保底 persona_items。
-覆盖不足进入 coverage_warnings / uncertainty seeds，不应直接变成 fatal error。
-```
+中文：Classification 只负责从 raw source 产生候选条目和诊断。分类失败不能伪造保底 persona item；覆盖不足应进入待确认流程。

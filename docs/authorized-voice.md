@@ -1,10 +1,10 @@
 # Authorized Voice Output
 
-Voice output is optional and separate from memory extraction.
+Voice output is optional. It runs after the chat reply has been decided and does not take part in memory extraction or fact selection.
 
-MemWeave first decides a fixed assistant `reply_text` using allowed evidence. Only then may an external IndexTTS2 adapter read that text. The voice adapter cannot decide facts, rewrite the reply, or bypass runtime evidence guards.
+MemWeave first creates a fixed `reply_text` from evidence that is allowed at runtime. An external IndexTTS2 adapter may then read that text aloud. The adapter cannot choose facts, rewrite the reply, or bypass the evidence guards.
 
-Generation requires:
+A generation request is accepted only when all of the following are available:
 
 - an active profile;
 - an authorized audio/video reference saved as a raw source;
@@ -13,6 +13,6 @@ Generation requires:
 - explicit consent for each generation request;
 - an available external adapter and output directory.
 
-Generated audio is marked as AI generated. Revoking or deleting a voice reference blocks future generation and removes derived generation records according to the active workflow.
+Generated audio is marked as AI generated. Revoking or deleting a voice reference blocks later generation and removes derived generation records according to the active workflow.
 
-Do not commit voice references, extracted audio, generated audio, model weights, or consent records to the source repository.
+Voice references, extracted audio, generated audio, model weights, and consent records do not belong in the source repository.

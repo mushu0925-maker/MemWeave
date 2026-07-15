@@ -1,10 +1,5 @@
-# ai
+# AI Adapters
 
-AI provider clients and model-call adapters belong here.
+Provider clients and low-level model-call adapters belong here. Prompt policy and classification rules stay in their domain or workflow instead of being hidden inside a provider client.
 
-中文备注：
-
-```text
-这里以后承接 ai_gateway 等技术调用。
-prompt 策略和分类业务规则不应直接混在 provider client 里。
-```
+中文：这里只封装供应商和模型调用；Prompt 策略与分类规则应留在对应的 domain 或 workflow。

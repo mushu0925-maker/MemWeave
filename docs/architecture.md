@@ -1,10 +1,10 @@
 # MemWeave Architecture
 
-## Product Boundary
+This document explains the parts of MemWeave that matter when changing the code. The central rule is simple: keep the original material, keep interpretations linked to it, and treat anything generated for chat as replaceable output.
 
-MemWeave organizes personal memory material into traceable structured interpretations and bounded runtime artifacts. It is not an identity replacement system. Generated chat and voice output must not claim literal identity, consciousness, resurrection, or unsupported facts.
+MemWeave is not an identity replacement system. Chat and voice output must not claim to be a real person, claim consciousness or resurrection, or present unsupported details as fact.
 
-## Source-of-Truth Model
+## Data Flow
 
 ```text
 raw_sources
@@ -15,12 +15,12 @@ raw_sources
                     -> chat reply
 ```
 
-- `raw_sources` preserve original or extracted evidence.
-- `source_segments` identify relevant excerpts and attribution state.
-- `persona_items` store structured A-M interpretations with source links, confidence, stability, scope, and risk.
-- `uncertain_items` and `question_targets` hold unclear, conflicting, sensitive, or low-confidence material for review.
-- `skills` are regenerable runtime artifacts, not canonical memory.
-- `chat_records` are conversation history. New claims remain candidates until confirmed.
+- `raw_sources` keep the submitted material and extracted content.
+- `source_segments` mark the excerpts that matter and record who they belong to.
+- `persona_items` store source-linked A-M interpretations with confidence, stability, scope, and risk.
+- `uncertain_items` and `question_targets` hold unclear, conflicting, sensitive, or low-confidence interpretations for review.
+- Generated Skills package reviewed material for runtime use and can be rebuilt at any time.
+- `chat_records` keep conversation history. A new claim from chat remains a candidate until the user confirms it.
 
 ## A-M Persona Libraries
 
@@ -42,37 +42,37 @@ raw_sources
 
 ## Backend
 
-The FastAPI backend is split into API routers, Pydantic schemas, domain services/stores, and orchestration workflows.
+The FastAPI backend separates HTTP handling from storage, domain rules, and cross-domain workflows.
 
-- API routers validate transport-level input and expose `/api/v1` resources.
-- Stores own persistence for one record family.
-- Workflows coordinate cross-domain operations such as ingestion, question answers, uncertainty actions, Skill generation, and chat candidates.
-- Runtime guards prevent hidden, forgotten, unsupported, or incorrectly attributed material from entering chat and Skill generation.
+- API routers validate requests and expose `/api/v1` resources.
+- Stores persist one record family at a time.
+- Workflows coordinate operations that cross record families, including ingestion, question answers, uncertainty actions, Skill generation, and chat candidates.
+- Runtime guards keep hidden, forgotten, unsupported, or incorrectly attributed material out of chat and Skill generation.
 
 Local JSON files are the default persistence backend. The optional SQLite mode stores the same JSON documents in SQLite; it is not a normalized multi-user schema.
 
 ## Frontend
 
-The Next.js workspace provides five active workflows:
+The Next.js workspace is organized around five user tasks:
 
 - Dashboard: create/select profiles and add raw material.
 - Library: inspect evidence, persona items, uncertainty, and Skill versions.
-- Chat: retrieve bounded memory slices and optionally generate authorized voice output.
+- Chat: retrieve only the memory slices needed for the current message and optionally generate authorized voice output.
 - Interview: save guided answers as raw sources before classification.
 - Settings: configure providers, feature flags, storage, and diagnostics.
 
-The former Translate page is intentionally excluded from the active source tree.
+The former Translate page is not part of the active source tree.
 
-## AI Provider Boundary
+## External Models
 
-Provider calls use an OpenAI-compatible interface. Each feature can use its own Base URL, API key, and model name. Model discovery is advisory and always retains a manual model-name fallback.
+Provider calls use an OpenAI-compatible interface. Chat/classification, vision OCR, and ASR can each use their own Base URL, API key, and model name. Model discovery helps populate choices, but manual model-name entry remains available when a provider does not expose discovery.
 
-External AI features are disabled by default. Raw material must remain stored when extraction or classification fails, and local fallback rules must not be presented as successful model distillation.
+External AI features are disabled by default. If extraction or classification fails, the raw material stays stored. Local fallback rules must not be reported as a successful model-based distillation.
 
-## Voice Boundary
+## Voice Output
 
-Voice feature storage describes speech characteristics; it is not voice cloning. Optional IndexTTS2 generation is a separate adapter and requires an authorized reference, confirmed source attribution, explicit generation consent, and fixed `reply_text`. Model weights and audio assets stay outside this repository.
+Group M stores descriptions of speech characteristics; that alone is not voice cloning. Optional IndexTTS2 output is a separate step. It requires an authorized reference, confirmed source attribution, explicit consent for generation, and a fixed `reply_text`. Model weights and audio assets stay outside this repository.
 
-## Deployment Boundary
+## Before Network Deployment
 
-The current backend is intended for local single-user use. A public deployment needs authentication, tenant isolation, production storage, upload limits, TLS, secret management, and operational monitoring before it can be considered safe.
+The current backend is for local, single-user use. A network deployment needs authentication, tenant isolation, production storage, upload limits, TLS, secret management, and operational monitoring before it can be considered safe.

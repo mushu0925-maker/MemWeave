@@ -1,5 +1,7 @@
 # Getting Started
 
+The automated setup is the recommended path. The manual commands below are mainly for debugging an installation or working around a local environment issue.
+
 ## Prerequisites
 
 - Windows 10 or 11
@@ -15,7 +17,7 @@ From the repository root:
 npm run setup
 ```
 
-The script:
+The script performs these steps:
 
 1. Creates `backend/.venv` when missing.
 2. Installs `backend/requirements.txt`.
@@ -39,7 +41,7 @@ Copy-Item backend\.env.example backend\.env
 Copy-Item frontend\.env.local.example frontend\.env.local
 ```
 
-Never commit the generated `.env` files.
+The generated `.env` files are local configuration and must not be committed.
 
 ## Start the Web Application
 
@@ -47,18 +49,18 @@ Never commit the generated `.env` files.
 npm run dev
 ```
 
-The launcher reuses a compatible backend when available, otherwise starts FastAPI on port 8000. It starts Next.js on port 3000 or a fallback port from 3001-3003. Frontend readiness requires both the root HTML and referenced `/_next/static` assets to respond successfully.
+The launcher reuses a compatible backend when one is already running; otherwise it starts FastAPI on port 8000. Next.js starts on port 3000 or a fallback from 3001-3003. The frontend is considered ready only when both the root page and its referenced `/_next/static` assets respond successfully.
 
 ## Configure Models
 
-External AI is disabled by default. Open Settings and configure only the capabilities you intend to use:
+External AI is disabled by default. Open Settings and configure only the capabilities you plan to use:
 
 - Chat / persona classification
 - Vision OCR
 - ASR
 - Authorized voice generation
 
-The provider must expose an OpenAI-compatible API. Model discovery may be unavailable on some providers; a manual model name is always accepted.
+The provider must expose an OpenAI-compatible API. Some providers do not implement model discovery, so the Settings page always accepts a manually entered model name.
 
 ## Verify the Checkout
 
@@ -73,10 +75,10 @@ npm run build
 
 ## Common Problems
 
-`Backend dependencies are missing`: run `npm run setup` and confirm `backend/.venv/Scripts/python.exe` exists.
+- `Backend dependencies are missing`: run `npm run setup` and confirm `backend/.venv/Scripts/python.exe` exists.
 
-`Missing Next.js binary`: run `npm ci` inside `frontend`.
+- `Missing Next.js binary`: run `npm ci` inside `frontend`.
 
-Frontend reports not ready while HTML responds: inspect `logs/frontend-dev.err.log`. The launcher deliberately rejects HTML-only responses when Next.js static assets are unavailable.
+- Frontend reports not ready while HTML responds: inspect `logs/frontend-dev.err.log`. The launcher deliberately rejects HTML-only responses when Next.js static assets are unavailable.
 
-Port already in use: stop the unrelated process or choose different ports when calling `scripts/start-dev.ps1`.
+- Port already in use: stop the unrelated process or choose different ports when calling `scripts/start-dev.ps1`.
