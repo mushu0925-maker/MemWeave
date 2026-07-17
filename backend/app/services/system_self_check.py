@@ -50,6 +50,7 @@ def _overall(checks: list[SystemSelfCheckItem]) -> SystemCheckStatus:
 def _required_routes(api_prefix: str) -> list[str]:
     return [
         "/health",
+        f"{api_prefix}/backups/export",
         f"{api_prefix}/config/ai",
         f"{api_prefix}/raw-sources",
         f"{api_prefix}/storage/status",

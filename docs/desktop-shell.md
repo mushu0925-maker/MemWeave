@@ -1,6 +1,6 @@
 # Desktop Development Shell
 
-The Electron shell opens the local MemWeave services in a desktop window during development. It is not a packaged Windows application.
+The Electron development shell opens the source checkout's local MemWeave services in a desktop window. It remains separate from the packaged Windows runtime.
 
 ## Start
 
@@ -22,6 +22,8 @@ No IndexTTS2 source, weights, reference audio, or generated output is included i
 
 The automatic layout also needs a compatible `indextts2/server.py` adapter and matching backend environment settings. See [Authorized Voice Output](authorized-voice.md) for the exact layout, adapter contract, and readiness checks.
 
-## What It Does Not Package
+## Packaged Windows Runtime
 
-The shell has no installer builder, code signing, automatic updates, bundled Python or Node, or bundled model runtime. Those are separate distribution tasks.
+The v0.2.0 packaging flow bundles Electron, a Next.js standalone server, and a PyInstaller backend into an unsigned Windows x64 NSIS installer. It does not bundle IndexTTS2 weights, user data, credentials, code signing, or automatic updates.
+
+See [Windows Installer](windows-installer.md) for build commands, installed data paths, backups, and uninstall behavior.

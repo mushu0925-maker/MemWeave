@@ -1,8 +1,9 @@
 {
   "name": "memweave",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "MemWeave local-first, evidence-grounded persona memory platform and development desktop shell.",
+  "author": "mushu0925-maker",
   "license": "SEE LICENSE IN LICENSE",
   "main": "desktop/main.cjs",
   "scripts": {
@@ -13,6 +14,12 @@
     "desktop:dev": "electron .",
     "client:check": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\start-client.ps1 -CheckOnly",
     "client:start": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\start-client.ps1",
+    "package:icon": "node ./scripts/generate-app-icon.cjs",
+    "package:setup": "npm run desktop:prepare-electron && npm run package:icon && node ./scripts/install-packaging-python-deps.cjs",
+    "package:frontend": "npm --prefix frontend run build && node ./scripts/prepare-frontend-standalone.cjs",
+    "package:backend": "node ./scripts/build-backend.cjs",
+    "package:verify": "node ./scripts/verify-packaged-resources.cjs",
+    "package:win": "npm run package:frontend && npm run package:backend && electron-builder --win nsis --x64 && npm run package:verify",
     "test:desktop": "node ./tests/desktop_failure_page_smoke.cjs",
     "test:regression": "node ./scripts/run-python.cjs ./tests/regression_smoke.py",
     "test:quality": "node ./scripts/run-python.cjs ./tests/distillation_quality_policy_smoke.py",
@@ -24,6 +31,61 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "electron": "^33.4.11"
+    "electron": "^33.4.11",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.memweave.app",
+    "productName": "MemWeave",
+    "artifactName": "MemWeave-${version}-Setup.${ext}",
+    "electronDist": "node_modules/electron/dist",
+    "asar": true,
+    "directories": {
+      "buildResources": "build",
+      "output": "release/installers"
+    },
+    "files": [
+      "desktop/**/*",
+      "package.json",
+      "!desktop/voice-setup.ps1",
+      "!**/.test-tmp/**",
+      "!**/backend/**",
+      "!**/frontend/**",
+      "!**/release/**"
+    ],
+    "extraResources": [
+      {
+        "from": "release",
+        "to": ".",
+        "filter": ["frontend/**/*"]
+      },
+      {
+        "from": "release/backend/memweave-backend",
+        "to": "backend/memweave-backend"
+      },
+      {
+        "from": "desktop/voice-setup.ps1",
+        "to": "voice-setup.ps1"
+      }
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": true,
+      "include": "build/installer.nsh"
+    }
   }
 }

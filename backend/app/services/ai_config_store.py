@@ -40,6 +40,11 @@ CONFIG_KEYS = {
 
 
 def env_path() -> Path:
+    configured = os.getenv("MEMWEAVE_CONFIG_DIR")
+    if configured:
+        directory = Path(configured)
+        directory.mkdir(parents=True, exist_ok=True)
+        return directory / ".env"
     return Path(__file__).resolve().parents[2] / ".env"
 
 

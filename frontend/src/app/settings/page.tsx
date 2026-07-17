@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, AlertTriangle, Check, ChevronDown, ChevronUp, ExternalLink, Headphones, Languages, Loader2, Play, PlugZap, RefreshCw, Save, Server, Settings, ShieldCheck } from "lucide-react";
+import { Activity, AlertTriangle, Check, ChevronDown, ChevronUp, Download, ExternalLink, Headphones, Languages, Loader2, Play, PlugZap, RefreshCw, Save, Server, Settings, ShieldCheck, Upload } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,10 +11,13 @@ import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/components/language-provider";
 import {
   discoverAIModels,
+  downloadFullBackup,
   getAIConfig,
   getAIModelOptions,
   getSystemSelfCheck,
   getVoiceGenerationStatus,
+  importBackup,
+  inspectBackup,
   runAcceptanceE2E,
   testAIConnection,
   updateAIConfig,
@@ -27,10 +30,12 @@ import {
   type AIModelDiscoveryResponse,
   type AIModelOption,
   type AIModelOptionsResponse,
+  type BackupImportPreview,
   type SystemCheckStatus,
   type SystemSelfCheckResponse,
   type VoiceGenerationStatusResponse,
 } from "@/lib/api";
+import { notifyWorkspaceStatusChanged } from "@/lib/workspace-state";
 
 type TextFieldKey =
   | "llm_base_url"
@@ -205,6 +210,12 @@ export default function SettingsPage() {
   const [isSelfChecking, setIsSelfChecking] = useState(true);
   const [isRunningAcceptance, setIsRunningAcceptance] = useState(false);
   const [testResult, setTestResult] = useState<AIConnectionTestResponse | null>(null);
+  const [backupPreview, setBackupPreview] = useState<BackupImportPreview | null>(null);
+  const [backupFileName, setBackupFileName] = useState("");
+  const [backupConflictMode, setBackupConflictMode] = useState<"merge" | "import_as_new">("merge");
+  const [isExportingBackup, setIsExportingBackup] = useState(false);
+  const [isInspectingBackup, setIsInspectingBackup] = useState(false);
+  const [isImportingBackup, setIsImportingBackup] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -676,6 +687,73 @@ export default function SettingsPage() {
     }
   }
 
+  function downloadBlob(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleExportBackup() {
+    setIsExportingBackup(true);
+    setError(null);
+    setMessage(null);
+    try {
+      downloadBlob(await downloadFullBackup(), `memweave-backup-${new Date().toISOString().slice(0, 10)}.zip`);
+      setMessage("完整备份已下载。备份不包含 API Key、凭据、模型权重或程序依赖。");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "完整备份导出失败。");
+    } finally {
+      setIsExportingBackup(false);
+    }
+  }
+
+  async function handleInspectBackup(file: File | null) {
+    setBackupPreview(null);
+    setBackupFileName(file?.name ?? "");
+    if (!file) {
+      return;
+    }
+    setIsInspectingBackup(true);
+    setError(null);
+    setMessage(null);
+    try {
+      setBackupPreview(await inspectBackup(file));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "备份预检失败。");
+    } finally {
+      setIsInspectingBackup(false);
+    }
+  }
+
+  async function handleImportBackup() {
+    if (!backupPreview) {
+      return;
+    }
+    setIsImportingBackup(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await importBackup({
+        import_token: backupPreview.import_token,
+        profile_conflict_mode: backupConflictMode,
+        global_data_mode: "keep_existing",
+      });
+      notifyWorkspaceStatusChanged();
+      setBackupPreview(null);
+      setBackupFileName("");
+      setMessage(`已导入 ${result.imported_profile_ids.length} 个新人物，恢复 ${result.imported_attachment_count} 个附件。`);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "备份导入失败。");
+    } finally {
+      setIsImportingBackup(false);
+    }
+  }
+
   return (
     <div className="flex h-[calc(100vh-6.5rem)] min-h-[620px] min-w-0 flex-col gap-3 overflow-hidden">
       <div className="rounded-md border bg-card px-4 py-3">
@@ -729,6 +807,84 @@ export default function SettingsPage() {
       ) : (
         <div className="grid min-h-0 min-w-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
           <section className="min-h-0 space-y-4 overflow-auto pr-0 lg:pr-1">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1.5">
+                    <CardTitle className="flex items-center gap-2">
+                      <Download className="size-5 text-primary" aria-hidden="true" />
+                      数据备份与恢复
+                    </CardTitle>
+                    <CardDescription>完整备份包含原始资料与派生数据；不会包含 API Key、凭据、模型权重或程序依赖。</CardDescription>
+                  </div>
+                  <Button type="button" size="sm" onClick={handleExportBackup} disabled={isExportingBackup}>
+                    {isExportingBackup ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Download className="size-4" aria-hidden="true" />}
+                    导出完整备份
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
+                  <div className="grid gap-2">
+                    <Label htmlFor="backup-import-file">导入 ZIP 备份</Label>
+                    <Input
+                      id="backup-import-file"
+                      type="file"
+                      accept="application/zip,.zip"
+                      onChange={(event) => void handleInspectBackup(event.target.files?.[0] ?? null)}
+                      disabled={isInspectingBackup || isImportingBackup}
+                    />
+                    {backupFileName ? <div className="text-xs text-muted-foreground">已选择：{backupFileName}</div> : null}
+                  </div>
+                  {isInspectingBackup ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                      正在检查备份内容...
+                    </div>
+                  ) : null}
+                  {backupPreview ? (
+                    <div className="space-y-3 rounded-md border bg-background p-3">
+                      <div className="grid gap-1 text-xs leading-5 text-muted-foreground sm:grid-cols-3">
+                        <span>文档 {backupPreview.document_count}</span>
+                        <span>附件 {backupPreview.attachment_count}</span>
+                        <span>{backupPreview.profiles.length} 个人物</span>
+                      </div>
+                      <div className="space-y-2">
+                        {backupPreview.profiles.map((profile) => (
+                          <div key={profile.id} className="flex flex-col gap-1 rounded-md border px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between">
+                            <span className="font-medium">{profile.display_name}</span>
+                            <span className={profile.conflicts_with_local ? "text-amber-900" : "text-muted-foreground"}>
+                              {profile.conflicts_with_local ? "与本地人物 ID 冲突" : "可直接导入"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      {backupPreview.conflict_profile_ids.length > 0 ? (
+                        <div className="grid gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                          <div className="font-medium">发现同 ID 人物</div>
+                          <label className="flex items-start gap-2">
+                            <input type="radio" name="backup-conflict-mode" checked={backupConflictMode === "merge"} onChange={() => setBackupConflictMode("merge")} className="mt-0.5 size-4" />
+                            <span>合并：保留本地人物资料，追加备份中的材料与派生记录。</span>
+                          </label>
+                          <label className="flex items-start gap-2">
+                            <input type="radio" name="backup-conflict-mode" checked={backupConflictMode === "import_as_new"} onChange={() => setBackupConflictMode("import_as_new")} className="mt-0.5 size-4" />
+                            <span>作为新人格导入：创建副本并重写关联 ID，不改动本地人物。</span>
+                          </label>
+                        </div>
+                      ) : null}
+                      {backupPreview.warnings.map((warning) => (
+                        <div key={warning} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">{warning}</div>
+                      ))}
+                      <Button type="button" onClick={handleImportBackup} disabled={isImportingBackup}>
+                        {isImportingBackup ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Upload className="size-4" aria-hidden="true" />}
+                        {backupConflictMode === "import_as_new" ? "作为新人格导入" : "确认导入并合并"}
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

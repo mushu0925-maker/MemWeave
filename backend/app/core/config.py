@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from functools import lru_cache
 from typing import Annotated, Literal
 
@@ -5,9 +7,14 @@ from pydantic import AnyHttpUrl, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _settings_env_file() -> str:
+    configured = os.getenv("MEMWEAVE_CONFIG_DIR")
+    return str(Path(configured) / ".env") if configured else ".env"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_settings_env_file(),
         env_file_encoding="utf-8",
         extra="ignore",
     )

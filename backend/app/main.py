@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import (
     acceptance,
+    backups,
     chat,
     config,
     distillation_plugins,
@@ -52,6 +53,7 @@ app.add_middleware(
 )
 
 app.include_router(ingest.router, prefix=settings.api_v1_prefix)
+app.include_router(backups.router, prefix=settings.api_v1_prefix)
 app.include_router(config.router, prefix=settings.api_v1_prefix)
 app.include_router(profiles.router, prefix=settings.api_v1_prefix)
 app.include_router(raw_sources.router, prefix=settings.api_v1_prefix)

@@ -1508,3 +1508,86 @@ export async function runAcceptanceE2E(payload: AcceptanceRunRequest = {}): Prom
 
   return response.json() as Promise<AcceptanceRunResponse>;
 }
+
+export type BackupProfilePreview = {
+  id: string;
+  display_name: string;
+  relationship: string;
+  deleted: boolean;
+  raw_source_count: number;
+  persona_item_count: number;
+  chat_record_count: number;
+  voice_generation_count: number;
+  conflicts_with_local: boolean;
+};
+
+export type BackupImportPreview = {
+  import_token: string;
+  scope: "full" | "profile";
+  created_at: string;
+  profiles: BackupProfilePreview[];
+  conflict_profile_ids: string[];
+  document_count: number;
+  attachment_count: number;
+  attachment_bytes: number;
+  warnings: string[];
+};
+
+export type BackupImportRequest = {
+  import_token: string;
+  profile_conflict_mode: "merge" | "import_as_new";
+  global_data_mode?: "keep_existing" | "merge";
+};
+
+export type BackupImportResponse = {
+  scope: "full" | "profile";
+  imported_profile_ids: string[];
+  remapped_profile_ids: Record<string, string>;
+  imported_document_counts: Record<string, number>;
+  imported_attachment_count: number;
+  skipped_global_documents: string[];
+  warnings: string[];
+};
+
+async function downloadBackup(path: string): Promise<Blob> {
+  const response = await apiFetch(`${API_BASE_URL}${path}`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(await errorMessageFromResponse(response));
+  }
+  return response.blob();
+}
+
+export function downloadFullBackup(): Promise<Blob> {
+  return downloadBackup("/api/v1/backups/export");
+}
+
+export function downloadProfileBackup(profileId: string): Promise<Blob> {
+  return downloadBackup(`/api/v1/backups/profiles/${encodeURIComponent(profileId)}/export`);
+}
+
+export async function inspectBackup(upload: File): Promise<BackupImportPreview> {
+  const formData = new FormData();
+  formData.append("upload", upload);
+  const response = await apiFetch(`${API_BASE_URL}/api/v1/backups/inspect`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new Error(await errorMessageFromResponse(response));
+  }
+  return response.json() as Promise<BackupImportPreview>;
+}
+
+export async function importBackup(payload: BackupImportRequest): Promise<BackupImportResponse> {
+  const response = await apiFetch(`${API_BASE_URL}/api/v1/backups/import`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await errorMessageFromResponse(response));
+  }
+  return response.json() as Promise<BackupImportResponse>;
+}

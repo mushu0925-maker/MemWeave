@@ -9,6 +9,8 @@ The automated setup is the recommended path. The manual commands below are mainl
 - Node.js 20 or newer
 - Python 3.11 or newer
 
+To install the packaged v0.2.0 Windows application instead of running a source checkout, see [Windows Installer](windows-installer.md).
+
 ## Automated Setup
 
 From the repository root:

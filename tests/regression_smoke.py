@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import shutil
 import sys
+import zipfile
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
@@ -26,15 +28,19 @@ os.environ["VOICE_OUTPUT_DIR"] = str(DATA_DIR / "voice_outputs")
 from starlette.datastructures import Headers, UploadFile
 
 from app.api.v1.ingest import ingest_uploaded_file
+from app.schemas.backup import BackupImportRequest
 from app.api.v1.monitoring import _DASHBOARD_HTML
-from app.schemas.persona_item import PersonaItemSchema
+from app.schemas.persona_item import PersonaItemCreate, PersonaItemSchema
 from app.schemas.profile import ProfileCreateRequest
 from app.schemas.raw_source import RawSourceCreate
 from app.schemas.source_segment import SourceSegmentSchema
 from app.services.acceptance_runner import run_acceptance
 from app.services.ai_config_store import _config_value, _format_env_line
+from app.services.backup_service import create_backup_archive, import_pending_backup, inspect_backup_upload
+from app.services.local_database import read_json_file, use_data_dir, write_json_file
 from app.services.mcp_service import call_mcp_tool
 from app.services.monitoring_store import record_monitoring_event
+from app.services.persona_item_store import save_persona_item
 from app.services.persona_chat import ChatUsePolicyContext, _direct_system_prompt, _persona_context_block
 from app.services.profile_store import create_profile, delete_profile, list_profiles
 from app.services.raw_source_store import get_raw_source, list_raw_sources, save_raw_source
@@ -256,6 +262,7 @@ def smoke_env_serialization_is_safe() -> None:
 def smoke_self_check_required_routes_include_raw_sources() -> None:
     available_paths = {
         "/health",
+        "/api/v1/backups/export",
         "/api/v1/config/ai",
         "/api/v1/raw-sources",
         "/api/v1/storage/status",
@@ -265,6 +272,7 @@ def smoke_self_check_required_routes_include_raw_sources() -> None:
         "/api/v1/system/self-check",
     }
     response = build_system_self_check(available_paths=available_paths)
+    assert_true(response.required_routes.get("/api/v1/backups/export") is True, "self-check does not require backup export")
     assert_true(response.required_routes.get("/api/v1/raw-sources") is True, "self-check does not require raw-sources route")
     assert_true(response.required_routes.get("/api/v1/system/self-check") is True, "self-check route is not validated")
 
@@ -314,6 +322,101 @@ def smoke_profile_delete_cleans_voice_generation() -> None:
     assert_true(not output_path.exists(), "voice generation output file was not deleted")
 
 
+async def _inspect_backup_archive(archive_path: Path):
+    with archive_path.open("rb") as stream:
+        upload = UploadFile(
+            filename=archive_path.name,
+            file=stream,
+            headers=Headers({"content-type": "application/zip"}),
+        )
+        return await inspect_backup_upload(upload)
+
+
+def smoke_backup_round_trip_and_conflicts() -> None:
+    source_profile = create_profile(ProfileCreateRequest(display_name="backup source", relationship="friend"))
+    upload_path = DATA_DIR / "uploads" / str(source_profile.id) / "memory.txt"
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_text("backup attachment", encoding="utf-8")
+    source = save_raw_source(
+        RawSourceCreate(
+            profile_id=source_profile.id,
+            source_type="file",
+            original_text="memory attachment",
+            extracted_text="memory attachment",
+            file_path=str(upload_path),
+            file_name="memory.txt",
+            mime_type="text/plain",
+            pii_masked_text="memory attachment",
+            metadata={},
+        )
+    )
+    save_persona_item(
+        PersonaItemCreate(
+            profile_id=source_profile.id,
+            source_id=source.id,
+            library_group="A",
+            library_key="fact_event_memory",
+            signal="Saved evidence remains traceable after export.",
+            evidence_quote="memory attachment",
+            confidence=0.8,
+            stability="stable",
+            subject_scope="target_profile",
+            write_target="target_profile",
+            risk="none",
+            prompt_snippet="traceable memory",
+            extraction_method="regression_smoke",
+            status="active",
+            metadata={},
+        )
+    )
+    write_json_file("ai_config.json", {"llm_api_key": "must-not-export"})
+    archive_path = create_backup_archive(profile_id=source_profile.id)
+    try:
+        with zipfile.ZipFile(archive_path) as archive:
+            names = set(archive.namelist())
+            assert_true("manifest.json" in names, "backup manifest is missing")
+            assert_true("data/ai_config.json" not in names, "backup exported AI configuration")
+            raw_records = json.loads(archive.read("data/raw_sources.json").decode("utf-8"))
+            assert_true(raw_records[0]["file_path"].startswith("attachments/raw/"), "backup did not make the attachment portable")
+
+        merge_root = TEST_ROOT / "backup-import-merge"
+        with use_data_dir(merge_root):
+            existing = source_profile.model_copy(update={"display_name": "local existing profile"}).model_dump(mode="json")
+            write_json_file("profiles.json", [existing])
+            preview = asyncio.run(_inspect_backup_archive(archive_path))
+            assert_true(preview.conflict_profile_ids == [source_profile.id], "backup conflict preview is missing the same profile id")
+            result = import_pending_backup(
+                BackupImportRequest(import_token=preview.import_token, profile_conflict_mode="merge")
+            )
+            assert_true(result.imported_profile_ids == [], "merge should not overwrite or duplicate the existing profile record")
+            profiles = read_json_file("profiles.json", [])
+            assert_true(profiles[0]["display_name"] == "local existing profile", "merge overwrote existing profile fields")
+            imported_sources = read_json_file("raw_sources.json", [])
+            assert_true(len(imported_sources) == 1, "merge did not import raw source evidence")
+            imported_path = Path(imported_sources[0]["file_path"])
+            assert_true(imported_path.exists() and imported_path.read_text(encoding="utf-8") == "backup attachment", "merge did not restore attachment")
+            imported_items = read_json_file("persona_items.json", [])
+            assert_true(imported_items[0]["source_id"] == imported_sources[0]["id"], "merge broke persona-to-source linkage")
+
+        new_root = TEST_ROOT / "backup-import-new"
+        with use_data_dir(new_root):
+            write_json_file("profiles.json", [source_profile.model_dump(mode="json")])
+            preview = asyncio.run(_inspect_backup_archive(archive_path))
+            result = import_pending_backup(
+                BackupImportRequest(import_token=preview.import_token, profile_conflict_mode="import_as_new")
+            )
+            assert_true(len(result.imported_profile_ids) == 1, "new-profile import did not add a profile")
+            new_profile_id = result.imported_profile_ids[0]
+            assert_true(new_profile_id != source_profile.id, "new-profile import reused a conflicting id")
+            imported_sources = read_json_file("raw_sources.json", [])
+            imported_items = read_json_file("persona_items.json", [])
+            copied_source = next(record for record in imported_sources if record["profile_id"] == str(new_profile_id))
+            copied_item = next(record for record in imported_items if record["profile_id"] == str(new_profile_id))
+            assert_true(copied_item["source_id"] == copied_source["id"], "new-profile import did not remap linked source ids")
+    finally:
+        archive_path.unlink(missing_ok=True)
+
+
 def main() -> None:
     smoke_monitoring_xss_escape()
     asyncio.run(smoke_raw_first_upload_failure())
@@ -325,6 +428,7 @@ def main() -> None:
     smoke_env_serialization_is_safe()
     smoke_self_check_required_routes_include_raw_sources()
     smoke_profile_delete_cleans_voice_generation()
+    smoke_backup_round_trip_and_conflicts()
     print("regression smoke passed")
 
 

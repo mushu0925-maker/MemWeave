@@ -9,12 +9,21 @@ const path = require("node:path");
 const { statusHtml } = require("./status-page.cjs");
 
 const ROOT_DIR = path.resolve(__dirname, "..");
+const IS_PACKAGED = app.isPackaged;
+const USER_DATA_ROOT = IS_PACKAGED
+  ? path.join(process.env.LOCALAPPDATA || app.getPath("appData"), "MemWeave")
+  : path.join(ROOT_DIR, "data");
+if (IS_PACKAGED) {
+  app.setPath("userData", USER_DATA_ROOT);
+}
 const FRONTEND_DIR = path.join(ROOT_DIR, "frontend");
 const BACKEND_DIR = path.join(ROOT_DIR, "backend");
-const INDEXTTS2_DIR = path.join(ROOT_DIR, "indextts2");
-const INDEXTTS2_REPO_DIR = path.join(INDEXTTS2_DIR, "index-tts");
-const LOG_DIR = path.join(ROOT_DIR, "logs");
-const ASCII_LINK_DIR = path.join(os.tmpdir(), "memweave-indextts2-root");
+const PACKAGED_FRONTEND_DIR = path.join(process.resourcesPath, "frontend");
+const PACKAGED_BACKEND_EXE = path.join(process.resourcesPath, "backend", "memweave-backend", "memweave-backend.exe");
+const VOICE_RUNTIME_DIR = IS_PACKAGED ? path.join(USER_DATA_ROOT, "voice-runtime") : path.join(ROOT_DIR, "indextts2");
+const INDEXTTS2_REPO_DIR = path.join(VOICE_RUNTIME_DIR, "index-tts");
+const LOG_DIR = IS_PACKAGED ? path.join(USER_DATA_ROOT, "logs") : path.join(ROOT_DIR, "logs");
+const ASCII_LINK_DIR = path.join(os.tmpdir(), "memweave-indextts2-runtime");
 
 const FRONTEND_PORT = Number(process.env.DESKTOP_FRONTEND_PORT || 3000);
 const BACKEND_PORT = Number(process.env.DESKTOP_BACKEND_PORT || 8000);
@@ -119,7 +128,23 @@ function backendSelfCheckReady(selfCheck) {
   }
   const status = selfCheck.body.overall_status;
   const routes = selfCheck.body.required_routes || {};
-  return status !== "blocked" && routes["/health"] === true && routes["/api/v1/raw-sources"] === true && routes["/api/v1/system/self-check"] === true;
+  return status !== "blocked" && routes["/health"] === true && routes["/api/v1/backups/export"] === true && routes["/api/v1/raw-sources"] === true && routes["/api/v1/system/self-check"] === true;
+}
+
+function backendRuntimeEnv() {
+  if (!IS_PACKAGED) {
+    return { ...process.env, PYTHONPATH: BACKEND_DIR };
+  }
+  return {
+    ...process.env,
+    MEMWEAVE_CONFIG_DIR: USER_DATA_ROOT,
+    LOCAL_DATA_DIR: path.join(USER_DATA_ROOT, "data"),
+    LOCAL_SQLITE_PATH: path.join(USER_DATA_ROOT, "data", "local_store.sqlite3"),
+    VOICE_REFERENCE_DIR: path.join(USER_DATA_ROOT, "voice_references"),
+    VOICE_OUTPUT_DIR: path.join(USER_DATA_ROOT, "voice_outputs"),
+    MEMWEAVE_BACKEND_HOST: "127.0.0.1",
+    MEMWEAVE_BACKEND_PORT: String(BACKEND_PORT),
+  };
 }
 
 function killProcessTree(name, child) {
@@ -266,14 +291,20 @@ async function ensureBackend() {
     };
   }
 
-  const env = {
-    ...process.env,
-    PYTHONPATH: BACKEND_DIR,
-  };
-  spawnService("desktop-backend", pythonPath(), ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", String(BACKEND_PORT)], {
-    cwd: BACKEND_DIR,
-    env,
-  });
+  if (IS_PACKAGED) {
+    if (!pathExists(PACKAGED_BACKEND_EXE)) {
+      return { ok: false, service: "backend", error: `Packaged backend executable is missing: ${PACKAGED_BACKEND_EXE}` };
+    }
+    spawnService("desktop-backend", PACKAGED_BACKEND_EXE, [], {
+      cwd: path.dirname(PACKAGED_BACKEND_EXE),
+      env: backendRuntimeEnv(),
+    });
+  } else {
+    spawnService("desktop-backend", pythonPath(), ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", String(BACKEND_PORT)], {
+      cwd: BACKEND_DIR,
+      env: backendRuntimeEnv(),
+    });
+  }
   const ready = await waitForHttp(BACKEND_HEALTH_URL, 45, "Backend");
   if (!ready.ok) {
     return { ok: false, service: "backend", error: ready.error };
@@ -317,15 +348,31 @@ async function ensureFrontend() {
     };
   }
 
-  const nextBin = path.join(FRONTEND_DIR, "node_modules", "next", "dist", "bin", "next");
-  if (!pathExists(nextBin)) {
-    return { ok: false, service: "frontend", error: `Missing Next.js binary: ${nextBin}. Run npm install in frontend.` };
+  if (IS_PACKAGED) {
+    const server = path.join(PACKAGED_FRONTEND_DIR, "server.js");
+    if (!pathExists(server)) {
+      return { ok: false, service: "frontend", error: `Packaged frontend server is missing: ${server}` };
+    }
+    spawnService("desktop-frontend", process.execPath, [server], {
+      cwd: PACKAGED_FRONTEND_DIR,
+      env: {
+        ...process.env,
+        ELECTRON_RUN_AS_NODE: "1",
+        HOSTNAME: "127.0.0.1",
+        PORT: String(FRONTEND_PORT),
+        NEXT_PUBLIC_API_BASE_URL: `http://127.0.0.1:${BACKEND_PORT}`,
+      },
+    });
+  } else {
+    const nextBin = path.join(FRONTEND_DIR, "node_modules", "next", "dist", "bin", "next");
+    if (!pathExists(nextBin)) {
+      return { ok: false, service: "frontend", error: `Missing Next.js binary: ${nextBin}. Run npm install in frontend.` };
+    }
+    spawnService("desktop-frontend", nodePath(), [nextBin, "dev", "--hostname", "127.0.0.1", "--port", String(FRONTEND_PORT)], {
+      cwd: FRONTEND_DIR,
+      env: { ...process.env, NEXT_PUBLIC_API_BASE_URL: `http://127.0.0.1:${BACKEND_PORT}` },
+    });
   }
-
-  spawnService("desktop-frontend", nodePath(), [nextBin, "dev", "--hostname", "127.0.0.1", "--port", String(FRONTEND_PORT)], {
-    cwd: FRONTEND_DIR,
-    env: { ...process.env, NEXT_PUBLIC_API_BASE_URL: `http://127.0.0.1:${BACKEND_PORT}` },
-  });
   const status = await waitForFrontend(60);
   if (!status.ok) {
     return { ok: false, service: "frontend", error: status.error };
@@ -337,21 +384,20 @@ function ensureAsciiJunction() {
   if (pathExists(ASCII_LINK_DIR)) {
     return ASCII_LINK_DIR;
   }
-  fs.symlinkSync(ROOT_DIR, ASCII_LINK_DIR, "junction");
+  fs.symlinkSync(VOICE_RUNTIME_DIR, ASCII_LINK_DIR, "junction");
   return ASCII_LINK_DIR;
 }
 
 function indextts2Paths() {
-  const asciiRoot = ensureAsciiJunction();
-  const asciiIndexTts = path.join(asciiRoot, "indextts2", "index-tts");
+  const asciiVoiceRoot = ensureAsciiJunction();
+  const asciiIndexTts = path.join(asciiVoiceRoot, "index-tts");
   return {
-    asciiRoot,
-    asciiIndextts2: path.join(asciiRoot, "indextts2"),
+    asciiIndextts2: asciiVoiceRoot,
     python: path.join(asciiIndexTts, ".venv", "Scripts", "python.exe"),
     repo: asciiIndexTts,
     modelDir: path.join(asciiIndexTts, "checkpoints"),
     cfgPath: path.join(asciiIndexTts, "checkpoints", "config.yaml"),
-    mplConfigDir: path.join(asciiRoot, "indextts2", ".matplotlib"),
+    mplConfigDir: path.join(asciiVoiceRoot, ".matplotlib"),
   };
 }
 
@@ -366,6 +412,14 @@ async function ensureIndexTTS2() {
       ok: false,
       service: "indextts2",
       error: `Port ${INDEXTTS2_PORT} is occupied, but IndexTTS2 adapter did not respond.`,
+    };
+  }
+  if (!pathExists(path.join(VOICE_RUNTIME_DIR, "server.py"))) {
+    return {
+      ok: false,
+      service: "indextts2",
+      optional: true,
+      error: "IndexTTS2 adapter is not installed. Run the local voice setup helper before enabling voice generation.",
     };
   }
   if (!pathExists(path.join(INDEXTTS2_REPO_DIR, "checkpoints", "config.yaml"))) {
@@ -484,6 +538,25 @@ ipcMain.handle("desktop-service-status", async () => ({
   backend: await request(BACKEND_HEALTH_URL),
   indextts2: await request(INDEXTTS2_HEALTH_URL),
 }));
+
+ipcMain.handle("desktop-start-voice-setup", () => {
+  if (!IS_PACKAGED) {
+    return { ok: false, message: "The local voice setup helper is available in installed builds only." };
+  }
+  const setupScript = path.join(process.resourcesPath, "voice-setup.ps1");
+  if (!pathExists(setupScript)) {
+    return { ok: false, message: "The packaged voice setup helper is missing." };
+  }
+  ensureDir(VOICE_RUNTIME_DIR);
+  ensureDir(USER_DATA_ROOT);
+  const child = spawn("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", setupScript, "-VoiceRoot", VOICE_RUNTIME_DIR, "-ConfigDir", USER_DATA_ROOT], {
+    detached: true,
+    windowsHide: false,
+    stdio: "ignore",
+  });
+  child.unref();
+  return { ok: true, message: "The local voice setup helper was opened." };
+});
 
 ipcMain.on("desktop-close", () => {
   void quitDesktop("failure_page_close");

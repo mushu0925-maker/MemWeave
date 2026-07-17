@@ -1,6 +1,6 @@
 # Electron 桌面开发壳
 
-Electron 开发壳用来在桌面窗口中打开本地 MemWeave 服务。它不是已打包的 Windows 应用。
+Electron 开发壳用来在桌面窗口中打开当前源码检出的本地 MemWeave 服务。它与安装包中的 Windows 运行时保持分离。
 
 ## 启动
 
@@ -22,6 +22,8 @@ npm run client:start
 
 自动启动还需要兼容的 `indextts2/server.py` 适配器和对应的后端环境配置。完整目录、接口约定和检查方法见 [授权声音输出](authorized-voice.zh-CN.md)。
 
-## 它没有打包的内容
+## Windows 安装版运行时
 
-当前没有 installer builder、代码签名、自动更新、内置 Python/Node 或内置模型运行时。这些属于后续独立的桌面分发工作。
+v0.2.0 打包流程会把 Electron、Next.js standalone server 和 PyInstaller 后端组成 unsigned Windows x64 NSIS 安装包。它不包含 IndexTTS2 权重、用户数据、凭据、代码签名或自动更新。
+
+构建命令、安装后数据路径、备份和卸载行为见 [Windows 安装指南](windows-installer.zh-CN.md)。

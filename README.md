@@ -28,17 +28,17 @@ Users can keep, correct, downrank, hide, or forget uncertain material. A correct
 - Regenerable Skill previews, saved Skill versions, and message-level chat retrieval.
 - OpenAI-compatible provider settings with model discovery and manual model-name entry.
 - Optional OCR, ASR, SQLite document storage, read-only MCP tools, Supabase login entry, and authorized IndexTTS2 output.
-- A responsive Next.js workspace, primary-label Chinese/English switching, and an Electron development shell for Windows.
+- A responsive Next.js workspace, primary-label Chinese/English switching, an Electron development shell, and an unsigned Windows x64 installer build.
 - Deterministic regression, policy, desktop, repository-hygiene, and CI checks.
 
 ## Current Limits
 
-MemWeave is a working local, single-user MVP. It is suitable for development and portfolio review, but it is not a hosted production service or a packaged desktop product.
+MemWeave is a working local, single-user MVP. It is suitable for local use, development, and portfolio review, but it is not a hosted production service or a signed production desktop application.
 
 - External AI, OCR, ASR, and voice generation are disabled or unconfigured by default.
 - The FastAPI backend has no production authentication or tenant isolation. Do not expose it directly to the public internet.
 - JSON is the default local store. The optional SQLite mode stores the same document-shaped data; it is not a multi-user relational design.
-- The Electron app is a development shell with no installer, code signing, automatic updates, or bundled runtimes.
+- The v0.2.0 Windows installer bundles Electron, the Next.js standalone server, and the FastAPI backend runtime. It is unsigned and has no automatic updates.
 - IndexTTS2 is an optional external adapter. This repository contains no model weights, voice references, or generated audio.
 
 ## Quick Start
@@ -67,6 +67,14 @@ Configure an OpenAI-compatible provider in Settings only when you need model-bac
 
 IndexTTS2 uses a separate local adapter. Read [Authorized Voice Output](docs/authorized-voice.md) before enabling it.
 
+## Windows Installer
+
+The v0.2.0 release includes an unsigned Windows x64 `Setup.exe`. Windows may show an unknown-publisher warning because this build is not code-signed.
+
+The installed application keeps its data, settings, logs, attachments, and generated audio under `%LOCALAPPDATA%\MemWeave`. Export a full backup from Settings before uninstalling: uninstall shows a deletion warning and removes that directory by default. Backup ZIP files are not encrypted, so handle them as sensitive data.
+
+The installer does not contain IndexTTS2 weights, voice references, API keys, or personal memory data. See [Windows Installer](docs/windows-installer.md) for installation, backup/import, uninstall, optional voice setup, and reproducible build commands.
+
 ## Desktop Development Shell
 
 After setup:
@@ -76,7 +84,7 @@ npm run client:check
 npm run client:start
 ```
 
-These commands start the local backend and frontend inside Electron. They do not build an installer. See [Desktop Shell](docs/desktop-shell.md).
+These commands start the source checkout inside Electron. See [Desktop Shell](docs/desktop-shell.md). To build the installer, follow [Windows Installer](docs/windows-installer.md).
 
 ## Verification
 
@@ -116,7 +124,7 @@ See [Architecture](docs/architecture.md) and the [Chinese architecture note](doc
 ```text
 backend/   FastAPI APIs, schemas, stores, workflows, and runtime guards
 frontend/  Next.js App Router workspace
-desktop/   Electron development shell
+desktop/   Electron development shell and packaged-runtime launcher
 scripts/   Setup, startup, dependency, and repository checks
 tests/     Deterministic regression and policy checks
 docs/      Architecture, setup, desktop, and voice-boundary notes

@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Database,
+  Download,
   FileText,
   Image as ImageIcon,
   Loader2,
@@ -30,6 +31,7 @@ import { useLanguage } from "@/components/language-provider";
 import {
   createProfile,
   deleteSkillVersion,
+  downloadProfileBackup,
   generateSkill,
   getProfileStatus,
   ingestFile,
@@ -160,6 +162,7 @@ export default function DashboardPage() {
   const [isSavingSkillVersion, setIsSavingSkillVersion] = useState(false);
   const [deletingSkillVersionId, setDeletingSkillVersionId] = useState<string | null>(null);
   const [isReextracting, setIsReextracting] = useState(false);
+  const [isExportingProfile, setIsExportingProfile] = useState(false);
   const [isProfileCreatorOpen, setIsProfileCreatorOpen] = useState(false);
 
   const piiTotal = useMemo(() => {
@@ -490,6 +493,36 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url);
   }
 
+  function downloadBlobFile(blob: Blob, fileName: string) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleExportProfile() {
+    if (!selectedProfileId || !selectedProfile) {
+      return;
+    }
+    setError(null);
+    setIsExportingProfile(true);
+    try {
+      const safeName = selectedProfile.display_name.replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "profile";
+      downloadBlobFile(
+        await downloadProfileBackup(selectedProfileId),
+        `memweave-profile-${safeName}-${new Date().toISOString().slice(0, 10)}.zip`,
+      );
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "人物导出失败。");
+    } finally {
+      setIsExportingProfile(false);
+    }
+  }
+
   function skillFilePrefix() {
     const profileName = selectedProfile?.display_name.trim() || selectedProfileId || "profile";
     const safeProfileName = profileName.replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "profile";
@@ -683,6 +716,17 @@ export default function DashboardPage() {
                     {profileLoadError}
                   </div>
                 ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleExportProfile}
+                  disabled={!selectedProfile || isExportingProfile}
+                >
+                  {isExportingProfile ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Download className="size-4" aria-hidden="true" />}
+                  导出当前人物
+                </Button>
                 <Button
                   type="button"
                   variant="outline"

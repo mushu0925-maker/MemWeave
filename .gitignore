@@ -12,6 +12,7 @@ __pycache__/
 .mypy_cache/
 .venv/
 .python-deps/
+release/
 
 # Node and frontend builds
 node_modules/
